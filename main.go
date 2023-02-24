@@ -23,8 +23,8 @@ func main() {
 
 	t := task.NewScheduler()
 	g.POST("/ghWebhook", t.GhWebhookHandler())
-	g.POST("/pkStreamWebhook", t.StreamWebhookHandler())
-	g.GET("/pkHealthCheck", t.HealthCheckHandler())
+	g.POST("/builderStreamWebhook", t.StreamWebhookHandler())
+	g.GET("/builderHealthCheck", t.HealthCheckHandler())
 
 	g.Run(fmt.Sprintf(":%d", cfg.ServerPort))
 }
