@@ -198,7 +198,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 			body, _ = json.Marshal(model.StreamWebhook{Payload: model.StreamWebhookPayload{PipelineId: pl.Id, TaskId: t.Id, Arguments: args}})
 
 			req, _ = http.NewRequest("POST", t.StreamWebhook, bytes.NewReader(body))
-			req.SetBasicAuth(s.cfg.PkUsername, s.cfg.PkPassword)
+			// req.SetBasicAuth(s.cfg.PkUsername, s.cfg.PkPassword)
 			res, _ := http.DefaultClient.Do(req)
 
 			if res != nil {

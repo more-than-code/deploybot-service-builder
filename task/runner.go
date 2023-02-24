@@ -69,7 +69,7 @@ func (r *Runner) DoTask(t model.Task, arguments []string) error {
 		return err
 	}
 
-	r.cHelper.PushImage(c.ImageName)
+	r.cHelper.PushImage(imageNameTag)
 
 	return nil
 }
