@@ -59,7 +59,7 @@ func (s *Scheduler) updateTaskStatus(pipelineId, taskId primitive.ObjectID, stat
 	body, _ := json.Marshal(model.UpdateTaskStatusInput{
 		PipelineId: pipelineId,
 		TaskId:     taskId,
-		Payload:    model.UpdateTaskStatusInputPayload{Status: status}})
+		Task:       struct{ Status string }{Status: status}})
 
 	req, _ := http.NewRequest("PUT", s.cfg.ApiBaseUrl+"/taskStatus", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
@@ -70,7 +70,7 @@ func (s *Scheduler) ProcessPostTask(pipelineId, taskId primitive.ObjectID, statu
 	body, _ := json.Marshal(model.UpdateTaskStatusInput{
 		PipelineId: pipelineId,
 		TaskId:     taskId,
-		Payload:    model.UpdateTaskStatusInputPayload{Status: status}})
+		Task:       struct{ Status string }{Status: status}})
 
 	req, _ := http.NewRequest("PUT", s.cfg.ApiBaseUrl+"/taskStatus", bytes.NewReader(body))
 	req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
@@ -121,7 +121,7 @@ func (s *Scheduler) StreamWebhookHandler() gin.HandlerFunc {
 
 		go func() {
 			s.updateTaskStatus(sw.Payload.PipelineId, task.Id, model.TaskInProgress)
-			err := s.runner.DoTask(*task, sw.Payload.Arguments)
+			err := s.runner.DoTask(task, sw.Payload.Arguments)
 
 			if timer != nil {
 				timer.Stop()
@@ -191,7 +191,17 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 			body, _ = json.Marshal(model.UpdateTaskInput{
 				PipelineId: pl.Id,
 				Id:         t.Id,
-				Payload:    model.UpdateTaskInputPayload{Remarks: &cbsStr}})
+				Task: struct {
+					Name           *string
+					UpstreamTaskId *primitive.ObjectID
+					StreamWebhook  *string
+					ScheduledAt    *primitive.DateTime
+					Config         *interface{}
+					Remarks        *string
+					AutoRun        *bool
+					Timeout        *int64
+					Type           *string
+				}{Remarks: &cbsStr}})
 			req, _ := http.NewRequest("PATCH", s.cfg.ApiBaseUrl+"/task", bytes.NewReader(body))
 			req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
 			http.DefaultClient.Do(req)
@@ -200,8 +210,8 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 			args := []string{fmt.Sprintf("IMAGE_TAG=%s", imageTag)}
 
 			body, _ = json.Marshal(model.UpdatePipelineInput{
-				Id:      pl.Id,
-				Payload: model.UpdatePipelineInputPayload{Arguments: args}})
+				Id:       pl.Id,
+				Pipeline: model.PipelineUpdate{Arguments: args}})
 			req, _ = http.NewRequest("PATCH", s.cfg.ApiBaseUrl+"/pipeline", bytes.NewReader(body))
 			req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
 			http.DefaultClient.Do(req)
