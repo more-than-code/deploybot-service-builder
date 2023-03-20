@@ -86,7 +86,7 @@ func (s *Scheduler) StreamWebhookHandler() gin.HandlerFunc {
 
 		log.Println(sw.Payload)
 
-		req, _ := http.NewRequest("GET", fmt.Sprintf("%s/task/%s/%s", s.cfg.ApiBaseUrl, sw.Payload.PipelineId.Hex(), sw.Payload.TaskId.Hex()), nil)
+		req, _ := http.NewRequest("GET", fmt.Sprintf("%s/task?pid=%s&id=%s", s.cfg.ApiBaseUrl, sw.Payload.PipelineId.Hex(), sw.Payload.TaskId.Hex()), nil)
 		req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
 
 		res, err := http.DefaultClient.Do(req)
