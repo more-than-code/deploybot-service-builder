@@ -3,12 +3,12 @@ package task
 import (
 	"testing"
 
-	"github.com/more-than-code/deploybot-service-api/model"
+	types "github.com/more-than-code/deploybot-service-builder/deploybot-types"
 )
 
 func TestHandleEvent(t *testing.T) {
 	s := NewScheduler()
-	s.PushEvent(model.Event{Key: "build", Value: "geoy-webapp"})
+	s.PushEvent(types.Event{Key: "build", Value: "geoy-webapp"})
 
 	e := s.PullEvent()
 	if e.Key != "build" {

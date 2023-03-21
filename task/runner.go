@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/docker/docker/api/types"
+	dTypes "github.com/docker/docker/api/types"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/more-than-code/deploybot-service-api/model"
+	types "github.com/more-than-code/deploybot-service-builder/deploybot-types"
 	"github.com/more-than-code/deploybot-service-builder/util"
 )
 
@@ -30,9 +30,9 @@ func NewRunner() *Runner {
 	return &Runner{cfg: cfg, cHelper: util.NewContainerHelper(cfg.DockerHost)}
 }
 
-func (r *Runner) DoTask(t model.Task, arguments []string) error {
+func (r *Runner) DoTask(t types.Task, arguments []string) error {
 
-	var c model.BuildConfig
+	var c types.BuildConfig
 
 	bs, err := json.Marshal(t.Config)
 
@@ -63,7 +63,7 @@ func (r *Runner) DoTask(t model.Task, arguments []string) error {
 
 	imageNameTag := c.ImageName + ":" + c.ImageTag
 
-	err = r.cHelper.BuildImage(files, &types.ImageBuildOptions{Dockerfile: c.Dockerfile, Tags: []string{imageNameTag}, BuildArgs: c.Args})
+	err = r.cHelper.BuildImage(files, &dTypes.ImageBuildOptions{Dockerfile: c.Dockerfile, Tags: []string{imageNameTag}, BuildArgs: c.Args})
 
 	if err != nil {
 		return err

@@ -1,0 +1,3 @@
+[submodule "deploybot-types"]
+	path = deploybot-types
+	url = https://github.com/more-than-code/deploybot-types.git

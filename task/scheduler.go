@@ -13,8 +13,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/more-than-code/deploybot-service-api/api"
-	"github.com/more-than-code/deploybot-service-api/model"
+	types "github.com/more-than-code/deploybot-service-builder/deploybot-types"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -43,20 +43,20 @@ func NewScheduler() *Scheduler {
 	return &Scheduler{runner: NewRunner(), cfg: cfg}
 }
 
-func (s *Scheduler) PushEvent(e model.Event) {
+func (s *Scheduler) PushEvent(e types.Event) {
 	gEventQueue.PushBack(e)
 }
 
-func (s *Scheduler) PullEvent() model.Event {
+func (s *Scheduler) PullEvent() types.Event {
 	e := gEventQueue.Front()
 
 	gEventQueue.Remove(e)
 
-	return e.Value.(model.Event)
+	return e.Value.(types.Event)
 }
 
 func (s *Scheduler) updateTaskStatus(pipelineId, taskId primitive.ObjectID, status string) {
-	body, _ := json.Marshal(model.UpdateTaskStatusInput{
+	body, _ := json.Marshal(types.UpdateTaskStatusInput{
 		PipelineId: pipelineId,
 		TaskId:     taskId,
 		Task:       struct{ Status string }{Status: status}})
@@ -67,7 +67,7 @@ func (s *Scheduler) updateTaskStatus(pipelineId, taskId primitive.ObjectID, stat
 }
 
 func (s *Scheduler) ProcessPostTask(pipelineId, taskId primitive.ObjectID, status string) {
-	body, _ := json.Marshal(model.UpdateTaskStatusInput{
+	body, _ := json.Marshal(types.UpdateTaskStatusInput{
 		PipelineId: pipelineId,
 		TaskId:     taskId,
 		Task:       struct{ Status string }{Status: status}})
@@ -81,7 +81,7 @@ func (s *Scheduler) StreamWebhookHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		body, _ := io.ReadAll(ctx.Request.Body)
 
-		var sw model.StreamWebhook
+		var sw types.StreamWebhook
 		json.Unmarshal(body, &sw)
 
 		log.Println(sw.Payload)
@@ -93,21 +93,21 @@ func (s *Scheduler) StreamWebhookHandler() gin.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			ctx.JSON(http.StatusBadRequest, api.WebhookResponse{Msg: err.Error(), Code: api.CodeServerError})
+			ctx.JSON(http.StatusBadRequest, types.WebhookResponse{Msg: err.Error(), Code: types.CodeServerError})
 
 			return
 		}
 
 		if res.StatusCode != 200 {
 			log.Println(res.Body)
-			ctx.JSON(http.StatusBadRequest, api.WebhookResponse{Msg: api.MsgClientError, Code: api.CodeClientError})
+			ctx.JSON(http.StatusBadRequest, types.WebhookResponse{Msg: types.MsgClientError, Code: types.CodeClientError})
 
 			return
 		}
 
 		body, _ = io.ReadAll(res.Body)
 
-		var tRes api.GetTaskResponse
+		var tRes types.GetTaskResponse
 		json.Unmarshal(body, &tRes)
 
 		task := tRes.Payload.Task
@@ -115,12 +115,12 @@ func (s *Scheduler) StreamWebhookHandler() gin.HandlerFunc {
 		var timer *time.Timer
 		if task.Timeout > 0 {
 			timer = s.cleanUp(time.Minute*time.Duration(task.Timeout), func() {
-				s.updateTaskStatus(sw.Payload.PipelineId, task.Id, model.TaskTimedOut)
+				s.updateTaskStatus(sw.Payload.PipelineId, task.Id, types.TaskTimedOut)
 			})
 		}
 
 		go func() {
-			s.updateTaskStatus(sw.Payload.PipelineId, task.Id, model.TaskInProgress)
+			s.updateTaskStatus(sw.Payload.PipelineId, task.Id, types.TaskInProgress)
 			err := s.runner.DoTask(task, sw.Payload.Arguments)
 
 			if timer != nil {
@@ -129,13 +129,13 @@ func (s *Scheduler) StreamWebhookHandler() gin.HandlerFunc {
 
 			if err != nil {
 				log.Println(err)
-				s.ProcessPostTask(sw.Payload.PipelineId, task.Id, model.TaskFailed)
+				s.ProcessPostTask(sw.Payload.PipelineId, task.Id, types.TaskFailed)
 			} else {
-				s.ProcessPostTask(sw.Payload.PipelineId, task.Id, model.TaskDone)
+				s.ProcessPostTask(sw.Payload.PipelineId, task.Id, types.TaskDone)
 			}
 		}()
 
-		ctx.JSON(http.StatusOK, api.WebhookResponse{})
+		ctx.JSON(http.StatusOK, types.WebhookResponse{})
 	}
 }
 
@@ -143,7 +143,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		body, _ := io.ReadAll(ctx.Request.Body)
 
-		var data model.GitHubHookshot
+		var data types.GitHubHookshot
 		json.Unmarshal(body, &data)
 
 		comps := strings.Split(data.Ref, "/")
@@ -164,11 +164,11 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 
 		body, _ = io.ReadAll(res.Body)
 
-		var plRes api.GetPipelinesResponse
+		var plRes types.GetPipelinesResponse
 		json.Unmarshal(body, &plRes)
 
 		for _, pl := range plRes.Payload.Items {
-			// if pl.Status == model.PipelineBusy {
+			// if pl.Status == types.PipelineBusy {
 			// 	continue
 			// }
 
@@ -178,7 +178,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 
 			t := pl.Tasks[0]
 
-			// if t.Status == model.TaskInProgress {
+			// if t.Status == types.TaskInProgress {
 			// 	continue
 			// }
 
@@ -188,7 +188,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 
 			log.Printf("%s", cbsStr)
 
-			body, _ = json.Marshal(model.UpdateTaskInput{
+			body, _ = json.Marshal(types.UpdateTaskInput{
 				PipelineId: pl.Id,
 				Id:         t.Id,
 				Task: struct {
@@ -209,15 +209,15 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 			// update pipeline
 			args := []string{fmt.Sprintf("IMAGE_TAG=%s", imageTag)}
 
-			body, _ = json.Marshal(model.UpdatePipelineInput{
+			body, _ = json.Marshal(types.UpdatePipelineInput{
 				Id:       pl.Id,
-				Pipeline: model.PipelineUpdate{Arguments: args}})
+				Pipeline: types.PipelineUpdate{Arguments: args}})
 			req, _ = http.NewRequest("PATCH", s.cfg.ApiBaseUrl+"/pipeline", bytes.NewReader(body))
 			req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
 			http.DefaultClient.Do(req)
 
 			// call stream webhook
-			body, _ = json.Marshal(model.StreamWebhook{Payload: model.StreamWebhookPayload{PipelineId: pl.Id, TaskId: t.Id, Arguments: args}})
+			body, _ = json.Marshal(types.StreamWebhook{Payload: types.StreamWebhookPayload{PipelineId: pl.Id, TaskId: t.Id, Arguments: args}})
 
 			req, _ = http.NewRequest("POST", t.StreamWebhook, bytes.NewReader(body))
 			// req.SetBasicAuth(s.cfg.PkUsername, s.cfg.PkPassword)
@@ -228,7 +228,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 			}
 		}
 
-		ctx.JSON(http.StatusOK, api.WebhookResponse{})
+		ctx.JSON(http.StatusOK, types.WebhookResponse{})
 	}
 }
 
