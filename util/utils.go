@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/kelseyhightower/envconfig"
 	"go.mongodb.org/mongo-driver/bson"
@@ -61,7 +62,7 @@ type Config struct {
 	RepoPassword string `envconfig:"REPO_PASSWORD"`
 }
 
-func CloneRepo(path, cloneUrl string) error {
+func CloneRepo(path, cloneUrl, branch string) error {
 	var cfg Config
 	err := envconfig.Process("", &cfg)
 	if err != nil {
@@ -70,6 +71,7 @@ func CloneRepo(path, cloneUrl string) error {
 
 	_, err = git.PlainClone(path, false, &git.CloneOptions{
 		URL:               cloneUrl,
+		ReferenceName:     plumbing.ReferenceName(branch),
 		Progress:          os.Stdout,
 		RecurseSubmodules: 1,
 		Auth: &http.BasicAuth{

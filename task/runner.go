@@ -46,10 +46,10 @@ func (r *Runner) DoTask(t types.Task, arguments []string) error {
 		return err
 	}
 
-	path := r.cfg.ProjectsPath + "/" + c.RepoName + "/"
+	path := r.cfg.ProjectsPath + "/" + c.RepoName + "_" + c.RepoBranch
 
 	os.RemoveAll(path)
-	err = util.CloneRepo(path, c.RepoUrl)
+	err = util.CloneRepo(path, c.RepoUrl, c.RepoBranch)
 
 	if err != nil {
 		return err

@@ -191,17 +191,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 			body, _ = json.Marshal(types.UpdateTaskInput{
 				PipelineId: pl.Id,
 				Id:         t.Id,
-				Task: struct {
-					Name           *string
-					UpstreamTaskId *primitive.ObjectID
-					StreamWebhook  *string
-					ScheduledAt    *primitive.DateTime
-					Config         *interface{}
-					Remarks        *string
-					AutoRun        *bool
-					Timeout        *int64
-					Type           *string
-				}{Remarks: &cbsStr}})
+				Task:       types.UpdateTaskInputTask{Remarks: &cbsStr}})
 			req, _ := http.NewRequest("PATCH", s.cfg.ApiBaseUrl+"/task", bytes.NewReader(body))
 			req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
 			http.DefaultClient.Do(req)
