@@ -46,7 +46,12 @@ func (r *Runner) DoTask(t types.Task, arguments []string) error {
 		return err
 	}
 
-	path := r.cfg.ProjectsPath + "/" + c.RepoName + "_" + c.RepoBranch
+	if c.RepoBranch == "" {
+		c.RepoBranch = "main"
+	}
+
+	// !!! Never omit the trailing slash, otherwise util.TarFiles will fail
+	path := r.cfg.ProjectsPath + "/" + c.RepoName + "_" + c.RepoBranch + "/"
 
 	os.RemoveAll(path)
 	err = util.CloneRepo(path, c.RepoUrl, c.RepoBranch)

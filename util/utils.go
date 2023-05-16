@@ -71,7 +71,7 @@ func CloneRepo(path, cloneUrl, branch string) error {
 
 	_, err = git.PlainClone(path, false, &git.CloneOptions{
 		URL:               cloneUrl,
-		ReferenceName:     plumbing.ReferenceName(branch),
+		ReferenceName:     plumbing.NewBranchReferenceName(branch),
 		Progress:          os.Stdout,
 		RecurseSubmodules: 1,
 		Auth: &http.BasicAuth{
