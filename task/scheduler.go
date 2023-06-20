@@ -24,8 +24,6 @@ var gEventQueue = list.New()
 type SchedulerConfig struct {
 	ApiBaseUrl string `envconfig:"API_BASE_URL"`
 	ApiKey     string `envconfig:"API_KEY"`
-	PkUsername string `envconfig:"PK_USERNAME"`
-	PkPassword string `envconfig:"PK_PASSWORD"`
 }
 
 type Scheduler struct {
