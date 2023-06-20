@@ -22,10 +22,10 @@ var gTicker *time.Ticker
 var gEventQueue = list.New()
 
 type SchedulerConfig struct {
-	ApiBaseUrl     string `envconfig:"API_BASE_URL"`
-	ApiAccessToken string `envconfig:"API_ACCESS_TOKEN"`
-	PkUsername     string `envconfig:"PK_USERNAME"`
-	PkPassword     string `envconfig:"PK_PASSWORD"`
+	ApiBaseUrl string `envconfig:"API_BASE_URL"`
+	ApiKey     string `envconfig:"API_KEY"`
+	PkUsername string `envconfig:"PK_USERNAME"`
+	PkPassword string `envconfig:"PK_PASSWORD"`
 }
 
 type Scheduler struct {
@@ -62,7 +62,7 @@ func (s *Scheduler) updateTaskStatus(pipelineId, taskId primitive.ObjectID, stat
 		Task:       struct{ Status string }{Status: status}})
 
 	req, _ := http.NewRequest("PUT", s.cfg.ApiBaseUrl+"/taskStatus", bytes.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
+	req.Header.Set("X-Api-Key", s.cfg.ApiKey)
 	http.DefaultClient.Do(req)
 }
 
@@ -73,7 +73,7 @@ func (s *Scheduler) ProcessPostTask(pipelineId, taskId primitive.ObjectID, statu
 		Task:       struct{ Status string }{Status: status}})
 
 	req, _ := http.NewRequest("PUT", s.cfg.ApiBaseUrl+"/taskStatus", bytes.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
+	req.Header.Set("X-Api-Key", s.cfg.ApiKey)
 	http.DefaultClient.Do(req)
 }
 
@@ -87,7 +87,7 @@ func (s *Scheduler) StreamWebhookHandler() gin.HandlerFunc {
 		log.Println(sw.Payload)
 
 		req, _ := http.NewRequest("GET", fmt.Sprintf("%s/task?pid=%s&id=%s", s.cfg.ApiBaseUrl, sw.Payload.PipelineId.Hex(), sw.Payload.TaskId.Hex()), nil)
-		req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
+		req.Header.Set("X-Api-Key", s.cfg.ApiKey)
 
 		res, err := http.DefaultClient.Do(req)
 
@@ -158,7 +158,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 		}
 
 		req, _ := http.NewRequest("GET", fmt.Sprintf("%s/pipelines?repoWatched=%s&branchWatched=%s&autoRun=true", s.cfg.ApiBaseUrl, data.Repository.Name, branch), nil)
-		req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
+		req.Header.Set("X-Api-Key", s.cfg.ApiKey)
 
 		res, _ := http.DefaultClient.Do(req)
 
@@ -193,7 +193,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 				Id:         t.Id,
 				Task:       types.UpdateTaskInputTask{Remarks: &cbsStr}})
 			req, _ := http.NewRequest("PATCH", s.cfg.ApiBaseUrl+"/task", bytes.NewReader(body))
-			req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
+			req.Header.Set("X-Api-Key", s.cfg.ApiKey)
 			http.DefaultClient.Do(req)
 
 			// update pipeline
@@ -203,7 +203,7 @@ func (s *Scheduler) GhWebhookHandler() gin.HandlerFunc {
 				Id:       pl.Id,
 				Pipeline: types.PipelineUpdate{Arguments: args}})
 			req, _ = http.NewRequest("PATCH", s.cfg.ApiBaseUrl+"/pipeline", bytes.NewReader(body))
-			req.Header.Set("Authorization", "Bearer "+s.cfg.ApiAccessToken)
+			req.Header.Set("X-Api-Key", s.cfg.ApiKey)
 			http.DefaultClient.Do(req)
 
 			// call stream webhook
