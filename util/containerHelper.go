@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
-	"log"
 	"os"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -44,20 +44,15 @@ func (h *ContainerHelper) BuildImage(buildContext io.Reader, buidOptions *types.
 		return err
 	}
 
-	res, err := io.ReadAll(buildResponse.Body)
-	if err != nil {
-		return err
-	}
+	defer buildResponse.Body.Close()
 
-	log.Println(string(res))
-
-	buildResponse.Body.Close()
+	io.Copy(os.Stdout, buildResponse.Body)
 
 	return nil
 }
 
 func (h *ContainerHelper) PushImage(name string) error {
-	authConfig := types.AuthConfig{
+	authConfig := registry.AuthConfig{
 		Username: h.cfg.DhUsername,
 		Password: h.cfg.DhPassword,
 	}
