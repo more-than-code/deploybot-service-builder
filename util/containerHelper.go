@@ -1,11 +1,9 @@
 package util
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 
@@ -48,24 +46,7 @@ func (h *ContainerHelper) BuildImage(buildContext io.Reader, buidOptions *types.
 
 	defer buildResponse.Body.Close()
 
-	// io.Copy(os.Stdout, buildResponse.Body)
-
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(buildResponse.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	// JSON レスポンスを解析します
-	var result []map[string]interface{}
-	json.Unmarshal(buf.Bytes(), &result)
-
-	// ログを出力します
-	for _, output := range result {
-		for _, message := range output {
-			fmt.Println(message)
-		}
-	}
+	io.Copy(os.Stdout, buildResponse.Body)
 
 	return nil
 }
